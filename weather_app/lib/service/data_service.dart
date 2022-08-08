@@ -21,35 +21,10 @@ class DataService {
       '/data/2.5/weather',
       queryParameters,
     );
-    final url = Uri.https(
-        'api.openweathermap.org', '/data/2.5/forecast', queryParameters);
 
     final response = await http.get(uri);
 
     final json = jsonDecode(response.body);
     return WeatherResponse.fromJson(json);
   }
-
-  // Future<Forecast> getWeatherFocast(double lat, double lon) async {
-  //   final parameters = {
-  //     'lat': lat,
-  //     'lon': lon,
-  //     'appid': 'e7faa38ee4bba1e7ff87a28aa06f29c1',
-  //   };
-  //   final endpoint = Uri.https(
-  //     'api.openweathermap.org',
-  //     '/data/2.5/weather',
-  //     parameters,
-  //   );
-
-  //   final uri =
-  //       Uri.https('api.openweathermap.org', '/data/2.5/forecast', parameters);
-  //   print('Kagiso');
-
-  //   final response = await http.get(endpoint);
-
-  //   print(response.body);
-  //   final json = jsonDecode(response.body);
-  //   return Forecast.fromJson(json);
-  // }
 }

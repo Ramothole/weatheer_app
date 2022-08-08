@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:intl/intl.dart';
 import 'package:weather_app/model/7dayforecast.dart';
 import 'package:weather_app/model/weather.dart';
 import 'package:weather_app/service/data_service.dart';
@@ -21,6 +21,7 @@ class _MyAppState extends State<MyApp> {
   final _dataService = DataService();
   final _forecastDataService = ForecastDataService();
   WeatherResponse? weatherResponse;
+
   Forecast? forecastResponse;
 
   @override
@@ -72,25 +73,24 @@ class _MyAppState extends State<MyApp> {
                     ),
                   ],
                 ),
-                if (weatherResponse != null)
+                if (weatherResponse != null && forecastResponse != null)
                   Column(
                     children: [
-                      location(),
                       Container(
                         height: 80,
                         width: 90,
                         child: weatherIcon(
                             weatherResponse!.weather![0].description!),
                       ),
+                      location(),
                       temparature(),
                       Text(weatherResponse!.weather![0].description!,
                           style: textStyle),
                       const SizedBox(
                         height: 16,
                       ),
-                      dailyWeatherCast('Daily weather Forecast', 7,
-                          '23/08/2022', 26, Axis.horizontal),
-                      weatherCast(),
+                      dailyWeatherCast(forecastResponse!.list!),
+                      weatherCast(forecastResponse!.list!),
                       additionalInfo(
                           weatherResponse!.wind!.speed.toString(),
                           weatherResponse!.main!.humidity.toString(),
@@ -101,10 +101,6 @@ class _MyAppState extends State<MyApp> {
                       ),
                     ],
                   ),
-                if (weatherResponse == null)
-                  const Center(
-                    child: Text('Location not found'),
-                  )
               ],
             ),
           ),
@@ -116,6 +112,8 @@ class _MyAppState extends State<MyApp> {
   weatherIcon(String weatherDeescription) {
     switch (weatherDeescription) {
       case ('sunny'):
+        return Image.asset('assets/sunny.jpeg');
+      case ('clear sky'):
         return Image.asset('assets/sunny.jpeg');
       case ('few clouds'):
         return Image.asset('assets/few_clouds.png');
@@ -146,10 +144,10 @@ class _MyAppState extends State<MyApp> {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        //  Icon(Icons.place, size: 16, color: Colors.red),
+        Icon(Icons.place, size: 16, color: Colors.red),
         Text('${weatherResponse!.name}',
             style: const TextStyle(
-                fontSize: 20, fontWeight: FontWeight.w300, color: Colors.white))
+                fontSize: 26, fontWeight: FontWeight.w300, color: Colors.white))
       ],
     );
   }
@@ -246,13 +244,7 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  dailyWeatherCast(
-    String title,
-    int itemCount,
-    String date,
-    int temp,
-    Axis scrollDireection,
-  ) {
+  dailyWeatherCast(List<ListElement> weatherForecast) {
     return LayoutBuilder(
         builder: (BuildContext ctx, BoxConstraints constraints) {
       return Padding(
@@ -261,7 +253,7 @@ class _MyAppState extends State<MyApp> {
           color: Colors.transparent,
           child: Column(
             children: [
-              heading(title),
+              heading('Hourly Weather Forecast'),
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -284,42 +276,63 @@ class _MyAppState extends State<MyApp> {
                 ),
                 child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: itemCount,
-                    scrollDirection: scrollDireection,
+                    itemCount: weatherForecast.length,
+                    scrollDirection: Axis.horizontal,
                     itemBuilder: (context, index) {
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              date,
-                              style: textStyle,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 6,
-                            width: 10,
-                          ),
-                          Container(
-                              child: Image.asset(
-                            'assets/sunny.jpeg',
-                            scale: 24,
-                          )),
-                          const SizedBox(
-                            height: 6,
-                            width: 10,
-                          ),
-                          const SizedBox(
-                            height: 6,
-                            width: 10,
-                          ),
-                          Text(
-                            '$temp°',
-                            style: textStyle,
-                          )
-                        ],
+                      var tempDate = weatherForecast[index].dtTxt;
+                      var tempformat = DateFormat('yyyy-MM-dd').format(
+                        tempDate!,
                       );
+
+                      final now = DateTime.now();
+                      final forecastDay = DateTime(
+                          weatherForecast[index].dtTxt!.year,
+                          weatherForecast[index].dtTxt!.month,
+                          weatherForecast[index].dtTxt!.day);
+                      final today = DateTime(now.year, now.month, now.day);
+                      var nowformat = DateFormat('yyyy-MM-dd').format(
+                        today,
+                      );
+                      if (today == forecastDay && weatherForecast.length > 0) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                DateFormat('HH:mm').format(DateTime.parse(
+                                    weatherForecast[index].dtTxt.toString())),
+                                style: textStyle,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 6,
+                              width: 10,
+                            ),
+                            Container(
+                                width: 24,
+                                height: 24,
+                                child: weatherIcon(weatherForecast[index]
+                                    .weather![0]
+                                    .description
+                                    .toString())),
+                            const SizedBox(
+                              height: 6,
+                              width: 10,
+                            ),
+                            const SizedBox(
+                              height: 6,
+                              width: 10,
+                            ),
+                            Text(
+                              weatherForecast[index].main!.temp!.toString() +
+                                  '°',
+                              style: textStyle,
+                            )
+                          ],
+                        );
+                      }
+                      return Container();
                     }),
               ),
             ],
@@ -329,7 +342,8 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  weatherCast() {
+  weatherCast(List<ListElement> weekForecast) {
+    compareDates(weekForecast);
     return LayoutBuilder(
         builder: (BuildContext ctx, BoxConstraints constraints) {
       return Padding(
@@ -338,8 +352,9 @@ class _MyAppState extends State<MyApp> {
           elevation: 0,
           color: Colors.transparent,
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              heading('10-Day Weather Forecast'),
+              heading('Weekly Weather Forecast'),
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -362,48 +377,60 @@ class _MyAppState extends State<MyApp> {
                 ),
                 child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: 7,
+                    itemCount: groupsList.length,
                     scrollDirection: Axis.vertical,
                     itemBuilder: (context, index) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              'date',
-                              style: textStyle,
-                            ),
+                      var dateFormat =
+                          DateFormat('EEEE').format(groupsList[index].dateTime);
+
+                      if (weekForecast[index].dtTxt!.compareTo(weekForecast[
+                                  (index == weekForecast.length || index == 0)
+                                      ? index
+                                      : index - 1]
+                              .dtTxt!) >
+                          0) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                flex: 1,
+                                child: Text(
+                                  dateFormat.toString(),
+                                  style: textStyle,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    '${groupsList[index].weekdays[index].main!.tempMin}°',
+                                    textAlign: TextAlign.left,
+                                    style: textStyle,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                  child: Container(
+                                      height: 24,
+                                      width: 24,
+                                      child: weatherIcon(weatherResponse!
+                                          .weather![0].description!))),
+                              Expanded(
+                                flex: 1,
+                                child: Text(
+                                  '${groupsList[index].weekdays[index].main!.tempMax}°',
+                                  style: textStyle,
+                                ),
+                              )
+                            ],
                           ),
-                          const SizedBox(
-                            height: 6,
-                            width: 10,
-                          ),
-                          Container(
-                              child: Image.asset(
-                            'assets/sunny.jpeg',
-                            scale: 40,
-                          )),
-                          // const Icon(
-                          //   Icons.sunny,
-                          //   size: 24,
-                          //   color: Colors.yellow,
-                          // ),
-                          const SizedBox(
-                            height: 6,
-                            width: 10,
-                          ),
-                          Text(
-                            '14°',
-                            style: textStyle,
-                          ),
-                          Text(
-                            '24°',
-                            style: textStyle,
-                          )
-                        ],
-                      );
+                        );
+                      }
+                      return Container();
                     }),
               ),
             ],
@@ -417,9 +444,44 @@ class _MyAppState extends State<MyApp> {
     final response = await _dataService.getWeather(_cityTextController.text);
     setState(() => weatherResponse = response);
 
-    final forecast = await _forecastDataService.getWeatherFocast(23.4, 12.3);
+    final forecast = await _forecastDataService.getWeatherFocast(
+        response.coord!.lat.toString(), response.coord!.lon.toString());
     setState(() {
       forecastResponse = forecast;
     });
   }
+
+  List<Group> groupsList = [];
+  void compareDates(List<ListElement> weekForecast) {
+    var prvious;
+    for (var item in weekForecast) {
+      List<ListElement> weekdays = [];
+      prvious = item.dtTxt!;
+      final prviousFormat = DateFormat('yyyy-MM-dd').format(
+        prvious,
+      );
+      for (var nextDate in weekForecast) {
+        final nextDateFormat = DateFormat('yyyy-MM-dd').format(
+          nextDate.dtTxt!,
+        );
+        if (nextDateFormat != prviousFormat) {
+          weekdays.add(nextDate);
+        }
+      }
+      groupsList.removeWhere((item) =>
+          DateFormat('yyyy-MM-dd').format(
+            item.dateTime,
+          ) ==
+          prviousFormat);
+      groupsList.add(Group(prvious, weekdays));
+      prvious = '';
+    }
+  }
+}
+
+class Group {
+  DateTime dateTime;
+  List<ListElement> weekdays;
+
+  Group(this.dateTime, this.weekdays);
 }
