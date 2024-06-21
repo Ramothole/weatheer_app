@@ -1,14 +1,6 @@
-# weather_app
+This is a weather application that allows you to search an areas weather forecast.
 
-A new Flutter project.
+This app will give the current weather data as well as a forecast.
 
-## Getting Started
-Weather-App
-Check the weather around you and all over the world at a glance. Rely on the accurate weather forecast and adjust your schedule to the weather coming in.
+This application uses Provider for state management and an http handler has been built to control all of the API calls.
 
-Weather is sometimes difficult to predict. This accurate weather app allows to find out a detailed forecast wherever you are, for any time of the day by searching your desired location:
-
-Current temperature
-Wind speed
-Pressure 
-daily WeatherCast
