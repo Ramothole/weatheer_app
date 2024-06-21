@@ -1,5 +1,5 @@
-enum FetchState {
   /// Initial state of not fetched
+  enum FetchState {
   not_fetched,
 
   /// Currently fetching or loading
